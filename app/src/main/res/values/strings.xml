@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">DermaScan</string>
+
+    <!-- Facebook Auth -->
+    <string name="facebook_app_id">2734464236930561</string> 
+    <string name="fb_login_protocol_scheme">fb2734464236930561</string>
+    <string name="facebook_client_token">bf81f700e77c1dc67e837f0f53e6f711</string>
+
+    <!-- Google Auth -->
+    <string name="google_web_client_id">617376899244-766fprh76180dt9khpvuh30o5qvpf8ps.apps.googleusercontent.com</string>
 </resources>

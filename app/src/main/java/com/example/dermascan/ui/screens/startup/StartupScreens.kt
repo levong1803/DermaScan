@@ -1,14 +1,39 @@
 package com.example.dermascan.ui.screens.startup
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,12 +88,12 @@ fun OnboardingScreen(appState: DermascanAppState, navController: NavHostControll
         Triple("AI Chat Assistant", "Ask skincare questions and get quick guidance inside the app.", listOf(Blue, com.example.dermascan.ui.theme.Purple)),
         Triple("Secure & Private", "Your sessions stay on-device in this Android Studio conversion.", listOf(com.example.dermascan.ui.theme.Purple, com.example.dermascan.ui.theme.Pink)),
     )
-    var index by rememberSaveable { mutableStateOf(0) }
+    var index by rememberSaveable { mutableIntStateOf(0) }
     val slide = slides[index]
     val icon = when (index) {
         0 -> Icons.Default.CameraAlt
-        1 -> Icons.Default.TrendingUp
-        2 -> Icons.Default.Chat
+        1 -> Icons.AutoMirrored.Filled.TrendingUp
+        2 -> Icons.AutoMirrored.Filled.Chat
         else -> Icons.Default.Security
     }
 
@@ -111,7 +136,7 @@ fun OnboardingScreen(appState: DermascanAppState, navController: NavHostControll
         Button(
             onClick = {
                 if (index < slides.lastIndex) {
-                    index += 1
+                    index++
                 } else {
                     appState.finishOnboarding()
                     navController.navigate(Routes.Permissions) {
@@ -143,15 +168,15 @@ fun PermissionScreen(appState: DermascanAppState, navController: NavHostControll
         permissions.forEach { item ->
             val granted = when (item.first) {
                 "camera" -> appState.cameraGranted
-                "notifications" -> appState.notificationsGranted
-                else -> appState.locationGranted
+                "notifications" -> appState.notificationsEnabled
+                else -> false
             }
             ElevatedCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), shape = RoundedCornerShape(24.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     val icon = when (item.first) {
                         "camera" -> Icons.Default.CameraAlt
                         "notifications" -> Icons.Default.Notifications
-                        else -> Icons.Default.Search
+                        else -> Icons.Default.Security
                     }
                     Box(modifier = Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(Teal.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
                         Icon(icon, contentDescription = null, tint = Teal)

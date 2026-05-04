@@ -1,10 +1,10 @@
 package com.example.dermascan.data
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.TrendingUp
 import com.example.dermascan.model.AppNotification
 import com.example.dermascan.model.ConditionResult
 import com.example.dermascan.model.Product
@@ -20,14 +20,14 @@ fun sampleProducts(): List<Product> = listOf(
     Product(3, "Vitamin C Brightening Serum", "La Roche-Posay", 49.99, 4.9, 3421, "Serum", "All", listOf("Brightening", "Dark Spots")),
     Product(4, "Gentle Hydrating Cleanser", "Cetaphil", 19.99, 4.6, 5623, "Cleanser", "Sensitive", listOf("Cleansing", "Soothing")),
     Product(5, "Mineral Sunscreen SPF 50", "Neutrogena", 24.99, 4.8, 2156, "Sunscreen", "All", listOf("UV Protection", "Non-greasy")),
-    Product(6, "Niacinamide Toner", "Paula's Choice", 34.99, 4.7, 1789, "Toner", "Oily to Combination", listOf("Pore Refining", "Oil Control")),
+    Product(6, "Niacidamide Toner", "Paula's Choice", 34.99, 4.7, 1789, "Toner", "Oily to Combination", listOf("Pore Refining", "Oil Control")),
 )
 
 fun sampleNotifications(): List<AppNotification> = listOf(
-    AppNotification(1, "Weekly Progress Update", "Your skin score improved by 8% this week. Keep it up.", "2 hours ago", Green, Icons.Default.TrendingUp, false),
+    AppNotification(1, "Weekly Progress Update", "Your skin score improved by 8% this week. Keep it up.", "2 hours ago", Green, Icons.AutoMirrored.Filled.TrendingUp, false),
     AppNotification(2, "Time for Your Routine", "Evening skincare reminder. Don't forget your retinol.", "5 hours ago", Blue, Icons.Default.CalendarToday, false),
     AppNotification(3, "New Product Recommendation", "We found 3 new products based on your latest scan.", "1 day ago", Purple, Icons.Default.ShoppingCart, true),
-    AppNotification(4, "AI Assistant Response", "Your assistant has fresh skincare tips based on your history.", "2 days ago", Pink, Icons.Default.Chat, true),
+    AppNotification(4, "AI Assistant Response", "Your assistant has fresh skincare tips based on your history.", "2 days ago", Pink, Icons.AutoMirrored.Filled.Chat, true),
 )
 
 fun demoScans(now: Long = System.currentTimeMillis()): List<ScanRecord> = listOf(

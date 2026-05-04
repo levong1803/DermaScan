@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -100,7 +99,7 @@ fun FormCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun AppTextField(label: String, value: String, onValueChange: (String) -> Unit, leading: @Composable (() -> Unit)? = null, trailing: @Composable (() -> Unit)? = null, visualTransformation: VisualTransformation = VisualTransformation.None) {
+fun AppTextField(label: String, value: String, onValueChange: (String) -> Unit, leading: @Composable (() -> Unit)? = null, trailing: @Composable (() -> Unit)? = null, visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None) {
     OutlinedTextField(value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), label = { Text(label) }, leadingIcon = leading, trailingIcon = trailing, visualTransformation = visualTransformation, shape = RoundedCornerShape(18.dp))
 }
 
@@ -190,7 +189,7 @@ fun ListNavRow(title: String, icon: ImageVector, onClick: () -> Unit) {
 
 @Composable
 fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Text(title.uppercase(), color = Color.Gray, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+    Text(title.uppercase(), color = Color.Gray, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.padding(top = 16.dp))
     Spacer(modifier = Modifier.height(10.dp))
     ElevatedCard(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), content = content)
@@ -224,6 +223,18 @@ fun SettingStaticRow(title: String, icon: ImageVector, trailing: String? = null)
 }
 
 @Composable
+fun RowScope.HeaderStatCard(label: String, value: String, icon: ImageVector, background: Color, tint: Color) {
+    Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(Color.White.copy(alpha = 0.2f)).padding(14.dp)) {
+        Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(background), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = Color.White.copy(alpha = 0.82f), fontSize = 12.sp)
+    }
+}
+
+@Composable
 fun RowScope.SmallStatCard(label: String, value: String, change: String) {
     ElevatedCard(shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f)) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -232,6 +243,17 @@ fun RowScope.SmallStatCard(label: String, value: String, change: String) {
             Text(value, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Text(change, color = Green, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun QuickActionCard(title: String, colors: List<Color>, icon: ImageVector, onClick: () -> Unit) {
+    Box(modifier = Modifier.width(156.dp).height(132.dp).clip(RoundedCornerShape(28.dp)).background(Brush.linearGradient(colors)).clickable(onClick = onClick).padding(18.dp)) {
+        Column {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
     }
 }
@@ -261,9 +283,8 @@ fun ScoreChart(scans: List<ScanRecord>) {
                 val x = leftPad + stepX * index
                 val y = topPad + chartHeight * (1f - scan.score / 100f)
                 if (index < scans.lastIndex) {
-                    val next = scans[index + 1]
                     val nextX = leftPad + stepX * (index + 1)
-                    val nextY = topPad + chartHeight * (1f - next.score / 100f)
+                    val nextY = topPad + chartHeight * (1f - scans[index+1].score / 100f)
                     drawLine(Teal, Offset(x, y), Offset(nextX, nextY), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
                 }
                 drawCircle(Teal, radius = 6.dp.toPx(), center = Offset(x, y))

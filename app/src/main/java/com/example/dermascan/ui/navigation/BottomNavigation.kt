@@ -1,8 +1,8 @@
 package com.example.dermascan.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -11,9 +11,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.compose.ui.graphics.vector.ImageVector
 
 data class BottomItem(val route: String, val label: String, val icon: ImageVector)
 
@@ -23,7 +23,7 @@ private val bottomItems = listOf(
     BottomItem(Routes.Home, "Home", Icons.Default.Home),
     BottomItem(Routes.Scan, "Scan", Icons.Default.CameraAlt),
     BottomItem(Routes.History, "History", Icons.Default.History),
-    BottomItem(Routes.Chatbot, "Chat", Icons.Default.Chat),
+    BottomItem(Routes.Chatbot, "Chat", Icons.AutoMirrored.Filled.Chat),
     BottomItem(Routes.Profile, "Profile", Icons.Default.Person),
 )
 

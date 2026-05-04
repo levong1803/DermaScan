@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">DermaScan</string>
+
+    <!-- Facebook Auth -->
+    <!-- LƯU Ý: Bạn PHẢI thay các giá trị dưới đây bằng ID thực tế từ developers.facebook.com -->
+    <!-- App ID thường là một dãy số dài khoảng 15 ký tự -->
+    <string name="facebook_app_id">YOUR_ACTUAL_FB_APP_ID</string> 
+    <string name="fb_login_protocol_scheme">fbYOUR_ACTUAL_FB_APP_ID</string>
+    <!-- Client Token lấy trong phần Settings -> Advanced của Facebook App -->
+    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN</string>
+
+    <!-- Google Auth -->
+    <!-- Đây là Web Client ID lấy từ Firebase Console -->
+    <string name="google_web_client_id">617376899244-rhp5it20p10isv3v44p2n1j4m8v7m8v7.apps.googleusercontent.com</string>
+</resources>

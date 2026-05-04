@@ -3,14 +3,14 @@ package com.example.dermascan.ui.screens.main
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.dermascan.data.DermascanAppState
-import com.example.dermascan.model.ChatMessage
 import com.example.dermascan.ui.components.*
 import com.example.dermascan.ui.navigation.Routes
 import com.example.dermascan.ui.theme.*
@@ -36,13 +35,14 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(appState: DermascanAppState, navController: NavHostController) {
-    val user = appState.currentUser
+    val user = appState.firebaseUser
     val scanHistory = appState.scanHistory.sortedByDescending { it.dateMillis }
     val currentMonth = nowMonth()
     val thisMonthCount = appState.scanHistory.count { monthOf(it.dateMillis) == currentMonth }
+    
     ScreenColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         GradientHeader(
-            title = "Hello, ${user?.name ?: "User"}",
+            title = "Hello, ${user?.displayName ?: "User"}",
             subtitle = "How's your skin today?",
             colors = listOf(Teal, Cyan),
             action = {
@@ -69,7 +69,7 @@ fun HomeScreen(appState: DermascanAppState, navController: NavHostController) {
             QuickActionCard("Scan Skin", listOf(Teal, Cyan), Icons.Default.CameraAlt) { navController.navigate(Routes.Scan) }
             QuickActionCard("Progress", listOf(Blue, Purple), Icons.AutoMirrored.Filled.TrendingUp) { navController.navigate(Routes.Progress) }
             QuickActionCard("AI Chat", listOf(Purple, Pink), Icons.AutoMirrored.Filled.Chat) { navController.navigate(Routes.Chatbot) }
-            QuickActionCard("Products", listOf(Orange, Color(0xFFEF4444)), Icons.Default.ShoppingCart) { navController.navigate(Routes.Products) }
+            QuickActionCard("Products", listOf(Orange, Red), Icons.Default.ShoppingCart) { navController.navigate(Routes.Products) }
         }
         Spacer(modifier = Modifier.height(26.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -95,11 +95,9 @@ fun ScanScreen(appState: DermascanAppState, navController: NavHostController) {
     val context = LocalContext.current
     var selectedImageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var analyzing by rememberSaveable { mutableStateOf(false) }
-    var complete by rememberSaveable { mutableStateOf(false) }
     var latestScanId by rememberSaveable { mutableStateOf("") }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedImageUri = uri?.toString()
-        complete = false
     }
 
     ScreenColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
@@ -125,7 +123,7 @@ fun ScanScreen(appState: DermascanAppState, navController: NavHostController) {
             Text(if (selectedImageUri == null) "Upload Photo" else "Change Image")
         }
         Spacer(modifier = Modifier.height(12.dp))
-        if (selectedImageUri != null && !complete) {
+        if (selectedImageUri != null) {
             Button(onClick = { analyzing = true }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
                 if (analyzing) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -138,16 +136,6 @@ fun ScanScreen(appState: DermascanAppState, navController: NavHostController) {
                 }
             }
         }
-        if (complete) {
-            Spacer(modifier = Modifier.height(12.dp))
-            InfoCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Green)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Analysis complete. Redirecting to report...", color = Green, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
     }
 
     LaunchedEffect(analyzing) {
@@ -156,9 +144,8 @@ fun ScanScreen(appState: DermascanAppState, navController: NavHostController) {
         val scan = appState.addGeneratedScan(selectedImageUri)
         latestScanId = scan.id
         analyzing = false
-        complete = true
         showToast(context, "Analysis complete")
-        delay(1000)
+        delay(500)
         navController.navigate(Routes.skinReport(latestScanId))
     }
 }
@@ -166,14 +153,15 @@ fun ScanScreen(appState: DermascanAppState, navController: NavHostController) {
 @Composable
 fun HistoryScreen(appState: DermascanAppState, navController: NavHostController) {
     var filter by rememberSaveable { mutableStateOf("all") }
-    var query by rememberSaveable { mutableStateOf("") }
+    var queryText by rememberSaveable { mutableStateOf("") }
+    
     val scans = appState.scanHistory.sortedByDescending { it.dateMillis }.filter { scan ->
         val matchFilter = when (filter) {
             "week" -> scan.dateMillis >= System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000
             "month" -> monthOf(scan.dateMillis) == nowMonth()
             else -> true
         }
-        val matchQuery = query.isBlank() || scan.type.contains(query, ignoreCase = true)
+        val matchQuery = queryText.isBlank() || scan.type.contains(queryText, ignoreCase = true)
         matchFilter && matchQuery
     }
 
@@ -182,13 +170,25 @@ fun HistoryScreen(appState: DermascanAppState, navController: NavHostController)
             TextButton(onClick = { navController.navigate(Routes.Compare) }) { Text("Compare", color = Color.White) }
         })
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), leadingIcon = { Icon(Icons.Default.Search, null) }, placeholder = { Text("Search scans...") }, shape = RoundedCornerShape(18.dp))
+        AppTextField(
+            label = "Search scans...", 
+            value = queryText, 
+            onValueChange = { queryText = it }, 
+            leading = { Icon(Icons.Default.Search, null) }
+        )
         Spacer(modifier = Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-            listOf("all" to "All", "week" to "This Week", "month" to "This Month").forEach { item ->
-                FilterChip(selected = filter == item.first, onClick = { filter = item.first }, label = { Text(item.second) })
+        
+        val filterOptions = listOf("all" to "All", "week" to "This Week", "month" to "This Month")
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(filterOptions) { item ->
+                FilterChip(
+                    selected = (filter == item.first), 
+                    onClick = { filter = item.first }, 
+                    label = { Text(item.second) }
+                )
             }
         }
+        
         Spacer(modifier = Modifier.height(18.dp))
         if (scans.isEmpty()) {
             EmptyState(Icons.Default.Search, "No scans found", "Try a different search or create a new scan", "Start Scanning") {
@@ -206,7 +206,6 @@ fun HistoryScreen(appState: DermascanAppState, navController: NavHostController)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatbotScreen() {
-    val quickQuestions = listOf("What causes acne?", "Best products for dry skin", "How to reduce wrinkles?", "Sunscreen recommendations")
     val botResponses = listOf(
         "Based on your recent scan, focus on hydration and daily SPF.",
         "Acne can be triggered by hormones, stress, and product buildup.",
@@ -214,15 +213,15 @@ fun ChatbotScreen() {
         "Retinol and sun protection are the strongest long-term anti-aging basics.",
     )
     val messages = remember {
-        mutableStateListOf(ChatMessage("1", "Hello. I'm your AI skincare assistant. I can help explain analysis results, suggest products, and answer routine questions.", false, "now"))
+        mutableStateListOf(com.example.dermascan.model.ChatMessage("1", "Hello. I'm your AI skincare assistant.", false, "now"))
     }
-    var input by rememberSaveable { mutableStateOf("") }
+    var inputText by rememberSaveable { mutableStateOf("") }
     var typing by rememberSaveable { mutableStateOf(false) }
 
     fun send(message: String) {
         if (message.isBlank()) return
-        messages.add(ChatMessage(System.currentTimeMillis().toString(), message, true, "now"))
-        input = ""
+        messages.add(com.example.dermascan.model.ChatMessage(System.currentTimeMillis().toString(), message, true, "now"))
+        inputText = ""
         typing = true
     }
 
@@ -241,36 +240,14 @@ fun ChatbotScreen() {
             }
             Spacer(modifier = Modifier.height(10.dp))
         }
-        if (typing) {
-            InfoCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text("Assistant is typing...", color = Color.Gray)
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-        if (messages.size == 1) {
-            SectionTitle("Quick Questions")
-            Spacer(modifier = Modifier.height(10.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                quickQuestions.forEach { question -> AssistChip(onClick = { send(question) }, label = { Text(question) }) }
-            }
-            Spacer(modifier = Modifier.height(18.dp))
-        }
         AppTextField(
-            label = "Ask me anything about skincare...",
-            value = input,
-            onValueChange = { input = it },
-            leading = { Icon(Icons.Default.Chat, null) },
+            label = "Ask me anything...",
+            value = inputText,
+            onValueChange = { inputText = it },
+            leading = { Icon(Icons.AutoMirrored.Filled.Chat, null) },
             trailing = {
-                IconButton(onClick = { send(input) }, enabled = input.isNotBlank()) {
-                    Icon(Icons.Default.Send, contentDescription = null, tint = if (input.isNotBlank()) Teal else Color.Gray)
+                IconButton(onClick = { send(inputText) }, enabled = inputText.isNotBlank()) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = if (inputText.isNotBlank()) Teal else Color.Gray)
                 }
             },
         )
@@ -279,7 +256,7 @@ fun ChatbotScreen() {
     LaunchedEffect(typing) {
         if (!typing) return@LaunchedEffect
         delay(1200)
-        messages.add(ChatMessage(System.currentTimeMillis().toString(), botResponses.random(), false, "now"))
+        messages.add(com.example.dermascan.model.ChatMessage(System.currentTimeMillis().toString(), botResponses.random(), false, "now"))
         typing = false
     }
 }
@@ -287,10 +264,10 @@ fun ChatbotScreen() {
 @Composable
 fun ProfileScreen(appState: DermascanAppState, navController: NavHostController) {
     val context = LocalContext.current
-    val user = appState.currentUser
+    val user = appState.firebaseUser
     ScreenColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         GradientHeader(
-            title = user?.name ?: "User",
+            title = user?.displayName ?: "User",
             subtitle = user?.email ?: "",
             colors = listOf(Teal, Cyan),
             action = {
@@ -308,7 +285,7 @@ fun ProfileScreen(appState: DermascanAppState, navController: NavHostController)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
-                        Text(user?.name ?: "User", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(user?.displayName ?: "User", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         Text(user?.email ?: "No email", color = Color.Gray)
                     }
                 }
@@ -338,29 +315,6 @@ fun ProfileScreen(appState: DermascanAppState, navController: NavHostController)
             }
         }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(20.dp)) {
             Text("Logout")
-        }
-    }
-}
-
-@Composable
-private fun RowScope.HeaderStatCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, background: Color, tint: Color) {
-    Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(Color.White.copy(alpha = 0.2f)).padding(14.dp)) {
-        Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(background), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(label, color = Color.White.copy(alpha = 0.82f), fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun QuickActionCard(title: String, colors: List<Color>, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Box(modifier = Modifier.width(156.dp).height(132.dp).clip(RoundedCornerShape(28.dp)).background(androidx.compose.ui.graphics.Brush.linearGradient(colors)).clickable(onClick = onClick).padding(18.dp)) {
-        Column {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
     }
 }

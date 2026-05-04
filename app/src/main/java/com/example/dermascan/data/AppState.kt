@@ -5,46 +5,52 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.dermascan.data.repository.AuthRepository
 import com.example.dermascan.model.AppNotification
 import com.example.dermascan.model.ConditionResult
 import com.example.dermascan.model.ScanRecord
-import com.example.dermascan.model.User
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.random.Random
 
 class DermascanAppState(context: Context) {
     private val prefs = context.getSharedPreferences("dermascan_prefs", Context.MODE_PRIVATE)
+    private val authRepository = AuthRepository()
+    private val db = FirebaseFirestore.getInstance()
+
+    // Theo dõi người dùng từ Firebase
+    var firebaseUser by mutableStateOf<FirebaseUser?>(authRepository.currentUser)
+        private set
 
     var hasSeenOnboarding by mutableStateOf(prefs.getBoolean("has_seen_onboarding", false))
         private set
     var cameraGranted by mutableStateOf(prefs.getBoolean("camera_granted", false))
         private set
-    var notificationsGranted by mutableStateOf(prefs.getBoolean("notifications_granted", false))
-        private set
-    var locationGranted by mutableStateOf(prefs.getBoolean("location_granted", false))
-        private set
     var notificationsEnabled by mutableStateOf(prefs.getBoolean("notifications_enabled", true))
         private set
     var darkMode by mutableStateOf(prefs.getBoolean("dark_mode", false))
         private set
-    var authToken by mutableStateOf(prefs.getString("auth_token", "") ?: "")
-        private set
-    var currentUser by mutableStateOf(loadSessionUser())
-        private set
-    var pendingVerification by mutableStateOf<User?>(null)
-        private set
 
-    val users = mutableStateListOf<User>()
     val scanHistory = mutableStateListOf<ScanRecord>()
     val favoriteProductIds = mutableStateListOf<Int>()
-    val notifications = mutableStateListOf<AppNotification>().apply { addAll(sampleNotifications()) }
+    val notifications = mutableStateListOf<AppNotification>()
 
-    val isAuthenticated: Boolean
-        get() = authToken.isNotBlank() && currentUser != null
+    val isAuthenticated: Boolean get() = firebaseUser != null
 
     init {
-        if (currentUser?.email == "demo@dermascan.com") {
-            seedDemoScansIfNeeded()
+        // Lắng nghe sự thay đổi trạng thái đăng nhập
+        com.google.firebase.auth.FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            firebaseUser = auth.currentUser
+            if (firebaseUser != null) {
+                loadUserData()
+            } else {
+                scanHistory.clear()
+            }
         }
+    }
+
+    private fun loadUserData() {
+        // Tương lai: Fetch scan history từ Firestore ở đây
     }
 
     fun finishOnboarding() {
@@ -53,57 +59,10 @@ class DermascanAppState(context: Context) {
     }
 
     fun setPermission(permissionId: String, granted: Boolean) {
-        when (permissionId) {
-            "camera" -> {
-                cameraGranted = granted
-                prefs.edit().putBoolean("camera_granted", granted).apply()
-            }
-            "notifications" -> {
-                notificationsGranted = granted
-                prefs.edit().putBoolean("notifications_granted", granted).apply()
-            }
-            "location" -> {
-                locationGranted = granted
-                prefs.edit().putBoolean("location_granted", granted).apply()
-            }
+        if (permissionId == "camera") {
+            cameraGranted = granted
+            prefs.edit().putBoolean("camera_granted", granted).apply()
         }
-    }
-
-    fun login(email: String, password: String): String? {
-        if (email == "demo@dermascan.com" && password == "demo123") {
-            seedDemoScansIfNeeded()
-            saveSession(User("demo-user", "Demo User", email), "demo-${System.currentTimeMillis()}")
-            return null
-        }
-        val matched = users.firstOrNull { it.email.equals(email, true) && it.password == password }
-            ?: return "Sai email hoặc mật khẩu"
-        saveSession(matched, "token-${System.currentTimeMillis()}")
-        return null
-    }
-
-    fun register(name: String, email: String, password: String): String? {
-        if (users.any { it.email.equals(email, true) }) return "Email đã được đăng ký"
-        val user = User("user-${System.currentTimeMillis()}", name, email, password, false)
-        users.add(user)
-        pendingVerification = user
-        return null
-    }
-
-    fun verifyOtp(otp: String): String? {
-        if (otp != "123456") return "OTP không hợp lệ. Dùng 123456 cho demo."
-        val pending = pendingVerification ?: return "Không có tài khoản chờ xác minh"
-        val verified = pending.copy(verified = true)
-        val index = users.indexOfFirst { it.id == pending.id }
-        if (index >= 0) users[index] = verified
-        pendingVerification = null
-        saveSession(verified, "token-${System.currentTimeMillis()}")
-        return null
-    }
-
-    fun logout() {
-        authToken = ""
-        currentUser = null
-        prefs.edit().remove("auth_token").remove("user_name").remove("user_email").apply()
     }
 
     fun toggleNotificationsEnabled(value: Boolean) {
@@ -111,13 +70,12 @@ class DermascanAppState(context: Context) {
         prefs.edit().putBoolean("notifications_enabled", value).apply()
     }
 
-    fun toggleDarkMode(value: Boolean) {
-        darkMode = value
-        prefs.edit().putBoolean("dark_mode", value).apply()
-    }
-
     fun toggleFavorite(productId: Int) {
-        if (favoriteProductIds.contains(productId)) favoriteProductIds.remove(productId) else favoriteProductIds.add(productId)
+        if (favoriteProductIds.contains(productId)) {
+            favoriteProductIds.remove(productId)
+        } else {
+            favoriteProductIds.add(productId)
+        }
     }
 
     fun markAllNotificationsRead() {
@@ -149,20 +107,14 @@ class DermascanAppState(context: Context) {
         return record
     }
 
-    private fun saveSession(user: User, token: String) {
-        authToken = token
-        currentUser = user
-        prefs.edit().putString("auth_token", token).putString("user_name", user.name).putString("user_email", user.email).apply()
+    fun logout() {
+        authRepository.logout()
     }
 
-    private fun loadSessionUser(): User? {
-        val name = prefs.getString("user_name", null)
-        val email = prefs.getString("user_email", null)
-        return if (name.isNullOrBlank() || email.isNullOrBlank()) null else User("persisted", name, email)
+    fun toggleDarkMode(value: Boolean) {
+        darkMode = value
+        prefs.edit().putBoolean("dark_mode", value).apply()
     }
-
-    private fun seedDemoScansIfNeeded() {
-        if (scanHistory.isNotEmpty()) return
-        scanHistory.addAll(demoScans())
-    }
+    
+    fun getAuthRepo() = authRepository
 }

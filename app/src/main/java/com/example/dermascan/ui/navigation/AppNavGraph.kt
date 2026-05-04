@@ -36,7 +36,8 @@ fun AppNavGraph(navController: NavHostController, appState: DermascanAppState) {
         composable(Routes.Login) { LoginScreen(appState, navController) }
         composable(Routes.Register) { RegisterScreen(appState, navController) }
         composable(Routes.Verify) { VerifyScreen(appState, navController) }
-        composable(Routes.ForgotPassword) { ForgotPasswordScreen(navController) }
+        composable(Routes.ForgotPassword) { ForgotPasswordScreen(appState, navController) }
+        
         composable(Routes.Home) { HomeScreen(appState, navController) }
         composable(Routes.Scan) { ScanScreen(appState, navController) }
         composable(Routes.History) { HistoryScreen(appState, navController) }
