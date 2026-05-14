@@ -1,32 +1,30 @@
 package com.example.dermascan.ui.screens.auth
 
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.dermascan.data.DermascanAppState
+import com.example.dermascan.ui.components.AppShapes
 import com.example.dermascan.ui.components.AppTextField
 import com.example.dermascan.ui.components.FormCard
 import com.example.dermascan.ui.components.GradientScreen
@@ -78,68 +76,76 @@ fun LoginScreen(appState: DermascanAppState, navController: NavHostController) {
     }
 
     GradientScreen(colors = listOf(Teal, Blue)) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Text("Welcome Back", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold)
-        Text("Sign in to continue", color = Color.White.copy(alpha = 0.8f))
-        Spacer(modifier = Modifier.height(30.dp))
-        
-        FormCard {
-            AppTextField("Email", email, { email = it }, leading = { Icon(Icons.Default.Email, null) })
-            Spacer(modifier = Modifier.height(12.dp))
-            AppTextField(
-                label = "Password",
-                value = password,
-                onValueChange = { password = it },
-                leading = { Icon(Icons.Default.Lock, null) },
-                trailing = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
-                    }
-                },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            )
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(60.dp))
+            Text("Welcome Back", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp)
+            Text("Sign in to continue your skincare journey", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(48.dp))
             
-            TextButton(
-                onClick = { 
-                    Log.d("AuthNav", "Navigating to ForgotPassword")
-                    navController.navigate(Routes.ForgotPassword) 
-                },
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Forgot password?")
-            }
-
-            Button(
-                onClick = { 
-                    if (email.isNotBlank() && password.isNotBlank()) loading = true 
-                    else showToast(context, "Nhập đầy đủ email và mật khẩu")
-                }, 
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-                else Text("Sign In")
-            }
-            
-            SocialButtons(
-                onGoogleClick = {
-                    scope.launch {
-                        try {
-                            val idToken = googleAuthHelper.signIn()
-                            if (idToken != null) {
-                                appState.getAuthRepo().signInWithGoogle(idToken)
-                                navController.navigate(Routes.Home) { popUpTo(Routes.Login) { inclusive = true } }
-                            }
-                        } catch (e: Exception) {
-                            showToast(context, "Lỗi Google: ${e.localizedMessage}")
+            FormCard {
+                AppTextField("Email Address", email, { email = it }, leading = { Icon(Icons.Default.Email, null, tint = Teal) })
+                Spacer(modifier = Modifier.height(16.dp))
+                AppTextField(
+                    label = "Password",
+                    value = password,
+                    onValueChange = { password = it },
+                    leading = { Icon(Icons.Default.Lock, null, tint = Teal) },
+                    trailing = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = Color.Gray)
                         }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                )
+                
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { navController.navigate(Routes.ForgotPassword) }) {
+                        Text("Forgot password?", color = Teal, fontWeight = FontWeight.Bold)
                     }
-                },
-                onFacebookClick = { facebookLauncher.launch(listOf("email", "public_profile")) }
-            )
+                }
 
-            TextButton(onClick = { navController.navigate(Routes.Register) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Don't have an account? Create one")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { 
+                        if (email.isNotBlank() && password.isNotBlank()) loading = true 
+                        else showToast(context, "Please enter email and password")
+                    }, 
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    shape = AppShapes.Button,
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal)
+                ) {
+                    if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    else Text("Sign In", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                
+                SocialButtons(
+                    onGoogleClick = {
+                        scope.launch {
+                            try {
+                                val idToken = googleAuthHelper.signIn()
+                                if (idToken != null) {
+                                    appState.getAuthRepo().signInWithGoogle(idToken)
+                                    navController.navigate(Routes.Home) { popUpTo(Routes.Login) { inclusive = true } }
+                                }
+                            } catch (e: Exception) {
+                                showToast(context, "Google Error: ${e.localizedMessage}")
+                            }
+                        }
+                    },
+                    onFacebookClick = { facebookLauncher.launch(listOf("email", "public_profile")) }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Don't have an account?", color = Color.Gray)
+                    TextButton(onClick = { navController.navigate(Routes.Register) }) {
+                        Text("Create one", color = Teal, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
@@ -150,7 +156,7 @@ fun LoginScreen(appState: DermascanAppState, navController: NavHostController) {
             appState.getAuthRepo().signInWithEmail(email.trim(), password)
             navController.navigate(Routes.Home) { popUpTo(Routes.Login) { inclusive = true } }
         } catch (e: Exception) {
-            showToast(context, e.localizedMessage ?: "Đăng nhập thất bại")
+            showToast(context, e.localizedMessage ?: "Login failed")
         } finally {
             loading = false
         }
@@ -160,7 +166,6 @@ fun LoginScreen(appState: DermascanAppState, navController: NavHostController) {
 @Composable
 fun RegisterScreen(appState: DermascanAppState, navController: NavHostController) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -168,34 +173,42 @@ fun RegisterScreen(appState: DermascanAppState, navController: NavHostController
     var loading by rememberSaveable { mutableStateOf(false) }
 
     GradientScreen(colors = listOf(Teal, Blue)) {
-        Spacer(modifier = Modifier.height(30.dp))
-        Text("Create Account", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        FormCard {
-            AppTextField("Name", name, { name = it }, leading = { Icon(Icons.Default.Person, null) })
-            Spacer(modifier = Modifier.height(10.dp))
-            AppTextField("Email", email, { email = it }, leading = { Icon(Icons.Default.Email, null) })
-            Spacer(modifier = Modifier.height(10.dp))
-            AppTextField("Password", password, { password = it }, leading = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation())
-            Spacer(modifier = Modifier.height(10.dp))
-            AppTextField("Confirm", confirmPassword, { confirmPassword = it }, leading = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation())
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(40.dp))
+            Text("Create Account", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Join our skincare community", color = Color.White.copy(alpha = 0.8f))
+            Spacer(modifier = Modifier.height(40.dp))
             
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = { 
-                    if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) loading = true
-                    else showToast(context, "Vui lòng điền đủ thông tin")
-                }, 
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-                else Text("Register")
-            }
+            FormCard {
+                AppTextField("Full Name", name, { name = it }, leading = { Icon(Icons.Default.Person, null, tint = Teal) })
+                Spacer(modifier = Modifier.height(12.dp))
+                AppTextField("Email Address", email, { email = it }, leading = { Icon(Icons.Default.Email, null, tint = Teal) })
+                Spacer(modifier = Modifier.height(12.dp))
+                AppTextField("Password", password, { password = it }, leading = { Icon(Icons.Default.Lock, null, tint = Teal) }, visualTransformation = PasswordVisualTransformation())
+                Spacer(modifier = Modifier.height(12.dp))
+                AppTextField("Confirm Password", confirmPassword, { confirmPassword = it }, leading = { Icon(Icons.Default.Lock, null, tint = Teal) }, visualTransformation = PasswordVisualTransformation())
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = { 
+                        if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) loading = true
+                        else showToast(context, "Please fill all fields")
+                    }, 
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    shape = AppShapes.Button,
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal)
+                ) {
+                    if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    else Text("Register", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
 
-            TextButton(onClick = { navController.popBackStack() }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Back to Sign In")
+                Spacer(modifier = Modifier.height(16.dp))
+                TextButton(onClick = { navController.popBackStack() }) {
+                    Text("Already have an account? Sign In", color = Teal, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -203,16 +216,16 @@ fun RegisterScreen(appState: DermascanAppState, navController: NavHostController
     LaunchedEffect(loading) {
         if (!loading) return@LaunchedEffect
         if (password != confirmPassword) {
-            showToast(context, "Mật khẩu không khớp")
+            showToast(context, "Passwords do not match")
             loading = false
             return@LaunchedEffect
         }
         try {
             appState.getAuthRepo().signUpWithEmail(name, email.trim(), password)
-            showToast(context, "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.")
+            showToast(context, "Success! Please check your email for verification.")
             navController.popBackStack()
         } catch (e: Exception) {
-            showToast(context, "Lỗi đăng ký: ${e.localizedMessage}")
+            showToast(context, "Registration error: ${e.localizedMessage}")
         } finally {
             loading = false
         }
@@ -233,31 +246,46 @@ fun ForgotPasswordScreen(appState: DermascanAppState, navController: NavHostCont
             }
             Text("Reset Password", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(40.dp))
-        FormCard {
-            Text("Enter your email to reset password", fontSize = 16.sp, color = Color.Gray)
-            Spacer(modifier = Modifier.height(16.dp))
-            AppTextField("Email Address", email, { email = it }, leading = { Icon(Icons.Default.Email, null) })
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    if (email.isBlank()) { showToast(context, "Vui lòng nhập email"); return@Button }
-                    loading = true
-                    scope.launch {
-                        try {
-                            appState.getAuthRepo().sendPasswordReset(email.trim())
-                            showToast(context, "Đã gửi link! Kiểm tra email của bạn.")
-                            navController.popBackStack()
-                        } catch (e: Exception) { 
-                            showToast(context, "Lỗi: ${e.localizedMessage}")
-                        } finally { loading = false }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-                else Text("Send Reset Link")
+        
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(60.dp))
+            FormCard {
+                Box(modifier = Modifier.size(80.dp).clip(AppShapes.Card).background(Teal.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Lock, null, tint = Teal, modifier = Modifier.size(40.dp))
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Recover your password", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Enter your email address and we'll send you a link to reset your password.", fontSize = 15.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                AppTextField("Email Address", email, { email = it }, leading = { Icon(Icons.Default.Email, null, tint = Teal) })
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = {
+                        if (email.isBlank()) { showToast(context, "Please enter email"); return@Button }
+                        loading = true
+                        scope.launch {
+                            try {
+                                appState.getAuthRepo().sendPasswordReset(email.trim())
+                                showToast(context, "Reset link sent! Please check your inbox.")
+                                navController.popBackStack()
+                            } catch (e: Exception) { 
+                                showToast(context, "Error: ${e.localizedMessage}")
+                            } finally { loading = false }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    shape = AppShapes.Button,
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal)
+                ) {
+                    if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    else Text("Send Reset Link", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
             }
         }
     }
@@ -266,19 +294,29 @@ fun ForgotPasswordScreen(appState: DermascanAppState, navController: NavHostCont
 @Composable
 fun SocialButtons(onGoogleClick: () -> Unit, onFacebookClick: () -> Unit) {
     Column {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            HorizontalDivider(modifier = Modifier.weight(1f))
-            Text(" OR ", color = Color.Gray, fontSize = 12.sp)
-            HorizontalDivider(modifier = Modifier.weight(1f))
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray.copy(alpha = 0.5f))
+            Text("  OR  ", color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray.copy(alpha = 0.5f))
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(onClick = onGoogleClick, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)) {
-            Text("Continue with Google")
+        Spacer(modifier = Modifier.height(24.dp))
+        OutlinedButton(
+            onClick = onGoogleClick, 
+            modifier = Modifier.fillMaxWidth().height(56.dp), 
+            shape = AppShapes.Button,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+        ) {
+            Text("Continue with Google", color = Color.Black, fontWeight = FontWeight.Medium)
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = onFacebookClick, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)), shape = RoundedCornerShape(16.dp)) {
-            Text("Continue with Facebook", color = Color.White)
+        Button(
+            onClick = onFacebookClick, 
+            modifier = Modifier.fillMaxWidth().height(56.dp), 
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)), 
+            shape = AppShapes.Button
+        ) {
+            Text("Continue with Facebook", color = Color.White, fontWeight = FontWeight.Medium)
         }
     }
 }

@@ -6,33 +6,42 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import com.example.dermascan.ui.theme.Teal
 
-data class BottomItem(val route: String, val label: String, val icon: ImageVector)
+data class BottomItem(
+    val route: String, 
+    val labelEn: String, 
+    val labelVi: String, 
+    val icon: ImageVector
+)
 
 val bottomRoutes = setOf(Routes.Home, Routes.Scan, Routes.History, Routes.Chatbot, Routes.Profile)
 
 private val bottomItems = listOf(
-    BottomItem(Routes.Home, "Home", Icons.Default.Home),
-    BottomItem(Routes.Scan, "Scan", Icons.Default.CameraAlt),
-    BottomItem(Routes.History, "History", Icons.Default.History),
-    BottomItem(Routes.Chatbot, "Chat", Icons.AutoMirrored.Filled.Chat),
-    BottomItem(Routes.Profile, "Profile", Icons.Default.Person),
+    BottomItem(Routes.Home, "Home", "Trang chủ", Icons.Default.Home),
+    BottomItem(Routes.Scan, "Scan", "Quét da", Icons.Default.CameraAlt),
+    BottomItem(Routes.History, "History", "Lịch sử", Icons.Default.History),
+    BottomItem(Routes.Chatbot, "AI Chat", "Tư vấn", Icons.AutoMirrored.Filled.Chat),
+    BottomItem(Routes.Profile, "Profile", "Tài khoản", Icons.Default.Person),
 )
 
 @Composable
 fun AppBottomBar(navController: NavHostController, currentRoute: String) {
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp
+    ) {
         bottomItems.forEach { item ->
+            val isSelected = currentRoute == item.route
+            
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = isSelected,
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -40,8 +49,23 @@ fun AppBottomBar(navController: NavHostController, currentRoute: String) {
                         launchSingleTop = true
                     }
                 },
-                icon = { Icon(item.icon, contentDescription = null) },
-                label = { Text(item.label) },
+                icon = { 
+                    Icon(
+                        item.icon, 
+                        contentDescription = null,
+                        tint = if (isSelected) Teal else MaterialTheme.colorScheme.onSurfaceVariant
+                    ) 
+                },
+                label = { 
+                    Text(
+                        item.labelEn, 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isSelected) Teal else MaterialTheme.colorScheme.onSurfaceVariant
+                    ) 
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Teal.copy(alpha = 0.1f)
+                )
             )
         }
     }

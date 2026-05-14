@@ -25,6 +25,7 @@ data class ScanRecord(
     val score: Int,
     val conditions: List<ConditionResult>,
     val recommendations: List<String>,
+    val skinAge: Int? = null,
 )
 
 data class ChatMessage(

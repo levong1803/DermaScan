@@ -1,19 +1,13 @@
 package com.example.dermascan.ui.screens.startup
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -22,40 +16,30 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.example.dermascan.data.DermascanAppState
-import com.example.dermascan.ui.components.GradientScreen
-import com.example.dermascan.ui.components.ScreenColumn
+import com.example.dermascan.ui.components.*
 import com.example.dermascan.ui.navigation.Routes
-import com.example.dermascan.ui.theme.Blue
-import com.example.dermascan.ui.theme.Cyan
-import com.example.dermascan.ui.theme.Teal
+import com.example.dermascan.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(appState: DermascanAppState, navController: NavHostController) {
     LaunchedEffect(Unit) {
-        delay(2200)
+        delay(2000)
         val target = when {
             !appState.hasSeenOnboarding -> Routes.Onboarding
             !appState.cameraGranted -> Routes.Permissions
@@ -69,13 +53,16 @@ fun SplashScreen(appState: DermascanAppState, navController: NavHostController) 
 
     GradientScreen(colors = listOf(Teal, Cyan, Blue)) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Box(modifier = Modifier.size(110.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Teal, modifier = Modifier.size(54.dp))
+            Box(modifier = Modifier.size(120.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                Surface(modifier = Modifier.size(90.dp), shape = CircleShape, color = Color.White) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Teal, modifier = Modifier.size(48.dp))
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("DermaScan", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("AI-Powered Skin Analysis", color = Color.White.copy(alpha = 0.9f), fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("DermaScan", color = Color.White, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp)
+            Text("AI Skin Intelligence", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
         }
     }
 }
@@ -83,133 +70,175 @@ fun SplashScreen(appState: DermascanAppState, navController: NavHostController) 
 @Composable
 fun OnboardingScreen(appState: DermascanAppState, navController: NavHostController) {
     val slides = listOf(
-        Triple("AI Skin Analysis", "Take a photo and get instant insights about your skin condition.", listOf(Teal, Cyan)),
-        Triple("Track Your Progress", "Follow score changes and compare scans across time.", listOf(Cyan, Blue)),
-        Triple("AI Chat Assistant", "Ask skincare questions and get quick guidance inside the app.", listOf(Blue, com.example.dermascan.ui.theme.Purple)),
-        Triple("Secure & Private", "Your sessions stay on-device in this Android Studio conversion.", listOf(com.example.dermascan.ui.theme.Purple, com.example.dermascan.ui.theme.Pink)),
+        Triple("AI Skin Scan", "Advanced algorithms to detect skin conditions in seconds.", listOf(Teal, Cyan)),
+        Triple("Track Changes", "Visual progress tracking with professional charts.", listOf(Cyan, Blue)),
+        Triple("Expert Support", "AI-powered chat for immediate skincare guidance.", listOf(Blue, Purple)),
+        Triple("Data Privacy", "Your medical data is encrypted and stored securely.", listOf(Purple, Pink)),
     )
     var index by rememberSaveable { mutableIntStateOf(0) }
     val slide = slides[index]
-    val icon = when (index) {
-        0 -> Icons.Default.CameraAlt
-        1 -> Icons.AutoMirrored.Filled.TrendingUp
-        2 -> Icons.AutoMirrored.Filled.Chat
-        else -> Icons.Default.Security
-    }
 
     GradientScreen(colors = slide.third) {
-        TextButton(
-            onClick = {
-                appState.finishOnboarding()
-                navController.navigate(Routes.Permissions) {
-                    popUpTo(Routes.Onboarding) { inclusive = true }
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { appState.finishOnboarding(); navController.navigate(Routes.Permissions) { popUpTo(Routes.Onboarding) { inclusive = true } } }) {
+                    Text("Skip", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
                 }
-            },
-            modifier = Modifier.align(Alignment.End),
-        ) {
-            Text("Skip", color = Color.White)
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.size(140.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = slide.third.first(), modifier = Modifier.size(54.dp))
             }
-            Spacer(modifier = Modifier.height(28.dp))
-            Text(slide.first, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(slide.second, color = Color.White.copy(alpha = 0.9f), fontSize = 18.sp, textAlign = TextAlign.Center)
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            slides.forEachIndexed { slideIndex, _ ->
-                Box(
-                    modifier = Modifier
-                        .height(8.dp)
-                        .width(if (slideIndex == index) 28.dp else 8.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = if (slideIndex == index) 1f else 0.35f)),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = {
-                if (index < slides.lastIndex) {
-                    index++
-                } else {
-                    appState.finishOnboarding()
-                    navController.navigate(Routes.Permissions) {
-                        popUpTo(Routes.Onboarding) { inclusive = true }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            AnimatedContent(
+                targetState = index,
+                transitionSpec = { fadeIn() + slideInHorizontally { it } togetherWith fadeOut() + slideOutHorizontally { -it } },
+                label = "OnboardingContent"
+            ) { targetIndex ->
+                val currentSlide = slides[targetIndex]
+                val currentIcon = when (targetIndex) {
+                    0 -> Icons.Default.CameraAlt
+                    1 -> Icons.AutoMirrored.Filled.TrendingUp
+                    2 -> Icons.AutoMirrored.Filled.Chat
+                    else -> Icons.Default.Security
+                }
+                
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.size(160.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                        Surface(modifier = Modifier.size(110.dp), shape = CircleShape, color = Color.White) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(currentIcon, contentDescription = null, tint = currentSlide.third.first(), modifier = Modifier.size(50.dp))
+                            }
+                        }
                     }
+                    Spacer(modifier = Modifier.height(40.dp))
+                    Text(currentSlide.first, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(currentSlide.second, color = Color.White.copy(alpha = 0.9f), fontSize = 18.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
                 }
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = slide.third.first()),
-            shape = RoundedCornerShape(20.dp),
-        ) {
-            Text(if (index == slides.lastIndex) "Get Started" else "Next", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.weight(1.2f))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                slides.forEachIndexed { i, _ ->
+                    Box(modifier = Modifier.height(6.dp).width(if (i == index) 24.dp else 6.dp).clip(CircleShape).background(Color.White.copy(alpha = if (i == index) 1f else 0.4f)))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Button(
+                onClick = {
+                    if (index < slides.lastIndex) index++
+                    else { appState.finishOnboarding(); navController.navigate(Routes.Permissions) { popUpTo(Routes.Onboarding) { inclusive = true } } }
+                },
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = slide.third.first()),
+                shape = AppShapes.Button,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
+            ) {
+                Text(if (index == slides.lastIndex) "Get Started" else "Continue", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
         }
     }
 }
 
 @Composable
 fun PermissionScreen(appState: DermascanAppState, navController: NavHostController) {
-    val permissions = listOf(
-        Triple("camera", "Camera Access", "Required to scan and analyze your skin"),
-        Triple("notifications", "Notifications", "Get reminders and skincare tips"),
-        Triple("location", "Location", "Find nearby dermatologists and clinics"),
-    )
+    val context = LocalContext.current
+    
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        appState.setPermission("camera", isGranted)
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        appState.setPermission("notifications", isGranted)
+    }
+
+    // Tự động cập nhật trạng thái nếu người dùng đã cấp quyền trước đó
+    LaunchedEffect(Unit) {
+        val cam = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        appState.setPermission("camera", cam)
+    }
+
     ScreenColumn {
-        Text("Enable Permissions", fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("We need a few permissions to match the original app flow.", color = Color.Gray)
-        Spacer(modifier = Modifier.height(24.dp))
-        permissions.forEach { item ->
-            val granted = when (item.first) {
-                "camera" -> appState.cameraGranted
-                "notifications" -> appState.notificationsEnabled
-                else -> false
-            }
-            ElevatedCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), shape = RoundedCornerShape(24.dp)) {
-                Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val icon = when (item.first) {
-                        "camera" -> Icons.Default.CameraAlt
-                        "notifications" -> Icons.Default.Notifications
-                        else -> Icons.Default.Security
-                    }
-                    Box(modifier = Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(Teal.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                        Icon(icon, contentDescription = null, tint = Teal)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(item.second, fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(item.third, color = Color.Gray, fontSize = 14.sp)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    if (granted) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A))
-                    } else {
-                        TextButton(onClick = { appState.setPermission(item.first, true) }) {
-                            Text("Grant")
-                        }
-                    }
-                }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Smart Access", fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp)
+        Text("We need your permission to provide accurate AI diagnostics.", color = Color.Gray, fontSize = 16.sp)
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        PermissionItem(
+            "camera", 
+            "Camera", 
+            "Essential for high-resolution skin scanning.", 
+            appState.cameraGranted
+        ) { 
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA) 
+        }
+        
+        PermissionItem(
+            "notifications", 
+            "Notifications", 
+            "Receive analysis alerts and skincare routines.", 
+            appState.notificationsEnabled
+        ) { 
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                appState.setPermission("notifications", true)
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        
+        PermissionItem(
+            "location", 
+            "Location", 
+            "Connect with local dermatologists nearby.", 
+            appState.locationGranted
+        ) { 
+            appState.setPermission("location", true) 
+        }
+        
+        Spacer(modifier = Modifier.weight(1f))
+        
         Button(
-            onClick = {
-                navController.navigate(Routes.Login) {
-                    popUpTo(Routes.Permissions) { inclusive = true }
-                }
-            },
+            onClick = { navController.navigate(Routes.Login) { popUpTo(Routes.Permissions) { inclusive = true } } },
             enabled = appState.cameraGranted,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = AppShapes.Button
         ) {
-            Text("Continue")
+            Text("Go to Sign In", fontWeight = FontWeight.Bold)
         }
     }
+}
+
+@Composable
+fun PermissionItem(id: String, title: String, desc: String, granted: Boolean, onGrant: () -> Unit) {
+    ModernCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val icon = when(id) {
+                "camera" -> Icons.Default.CameraAlt
+                "notifications" -> Icons.Default.Notifications
+                else -> Icons.Default.Security
+            }
+            Box(modifier = Modifier.size(52.dp).clip(AppShapes.Small).background(Teal.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = Teal)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(desc, color = Color.Gray, fontSize = 14.sp)
+            }
+            if (granted) {
+                Icon(Icons.Default.CheckCircle, null, tint = Green, modifier = Modifier.size(28.dp))
+            } else {
+                TextButton(onClick = onGrant) { Text("Allow", fontWeight = FontWeight.Bold) }
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(16.dp))
 }

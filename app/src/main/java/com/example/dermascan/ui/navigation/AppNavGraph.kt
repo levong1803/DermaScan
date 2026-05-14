@@ -1,5 +1,7 @@
 package com.example.dermascan.ui.navigation
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -13,6 +15,7 @@ import com.example.dermascan.ui.screens.auth.RegisterScreen
 import com.example.dermascan.ui.screens.auth.VerifyScreen
 import com.example.dermascan.ui.screens.feature.CompareScreen
 import com.example.dermascan.ui.screens.feature.NotificationsScreen
+import com.example.dermascan.ui.screens.feature.PrivacyPolicyScreen
 import com.example.dermascan.ui.screens.feature.ProductsScreen
 import com.example.dermascan.ui.screens.feature.ProgressScreen
 import com.example.dermascan.ui.screens.feature.RecommendationsScreen
@@ -29,7 +32,14 @@ import com.example.dermascan.ui.screens.startup.SplashScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController, appState: DermascanAppState) {
-    NavHost(navController = navController, startDestination = Routes.Splash) {
+    NavHost(
+        navController = navController, 
+        startDestination = Routes.Splash,
+        enterTransition = { fadeIn(animationSpec = tween(300)) + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
+        exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(300)) + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) },
+        popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) }
+    ) {
         composable(Routes.Splash) { SplashScreen(appState, navController) }
         composable(Routes.Onboarding) { OnboardingScreen(appState, navController) }
         composable(Routes.Permissions) { PermissionScreen(appState, navController) }
@@ -41,7 +51,7 @@ fun AppNavGraph(navController: NavHostController, appState: DermascanAppState) {
         composable(Routes.Home) { HomeScreen(appState, navController) }
         composable(Routes.Scan) { ScanScreen(appState, navController) }
         composable(Routes.History) { HistoryScreen(appState, navController) }
-        composable(Routes.Chatbot) { ChatbotScreen() }
+        composable(Routes.Chatbot) { ChatbotScreen(appState) }
         composable(Routes.Profile) { ProfileScreen(appState, navController) }
         composable(Routes.Settings) { SettingsScreen(appState, navController) }
         composable(Routes.Recommendations) { RecommendationsScreen(navController) }
@@ -49,6 +59,7 @@ fun AppNavGraph(navController: NavHostController, appState: DermascanAppState) {
         composable(Routes.Progress) { ProgressScreen(appState, navController) }
         composable(Routes.Compare) { CompareScreen(appState, navController) }
         composable(Routes.Notifications) { NotificationsScreen(appState, navController) }
+        composable(Routes.PrivacyPolicy) { PrivacyPolicyScreen(appState, navController) }
         composable(route = Routes.SkinReport, arguments = listOf(navArgument("scanId") { type = NavType.StringType })) { entry ->
             SkinReportScreen(appState, navController, entry.arguments?.getString("scanId").orEmpty())
         }

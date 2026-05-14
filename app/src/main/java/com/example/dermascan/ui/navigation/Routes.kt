@@ -20,6 +20,7 @@ object Routes {
     const val Compare = "compare"
     const val Notifications = "notifications"
     const val SkinReport = "skin_report/{scanId}"
+    const val PrivacyPolicy = "privacy_policy"
 
     fun skinReport(scanId: String): String = "skin_report/$scanId"
 }
